@@ -6,7 +6,7 @@ from fastapi.middleware.cors import CORSMiddleware
 app= FastAPI()
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["https://ai-azeez.vercel.app"],
+    allow_origins=["http://localhost:8081","https://ai-azeez.vercel.app"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
