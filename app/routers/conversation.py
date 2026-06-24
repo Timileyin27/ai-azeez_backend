@@ -45,3 +45,20 @@ def update_conversation(conversation_id: str, payload: schemas.conversationIN, d
     db.commit()
     db.refresh(conversation)
     return conversation
+@router.post("/{conversation_id}/message",status_code=status.HTTP_201_CREATED)
+def create_chat(conversation_id: str,payload: schemas.messageIN,db: Session=Depends(get_db),current_user: app.models.users.User = Depends(app.oauth2.get_current_user)):
+    conversation = db.query(models.Conversation).filter(models.Conversation.id == conversation_id, models.Conversation.user_id == current_user.id).first()
+    if not conversation:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Conversation not found")
+    new_message=models.Message(conversation_id=conversation.id,role="user",content=payload.content)
+    db.add(new_message)
+    db.commit()
+    db.refresh(new_message)
+    return new_message
+@router.get("/{conversation_id}/message",response_model=list[schemas.messageOUT])
+def getMessage(conversation_id: str,db: Session=Depends(get_db),current_user: app.models.users.User = Depends(app.oauth2.get_current_user)):
+    conversation = db.query(models.Conversation).filter(models.Conversation.id == conversation_id, models.Conversation.user_id == current_user.id).first()
+    if not conversation:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Conversation not found")
+    message=db.query(models.Message).filter(models.Message.conversation_id==conversation_id).all()
+    return message

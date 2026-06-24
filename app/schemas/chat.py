@@ -15,8 +15,8 @@ class messageIN(BaseModel):
     role: MessageRole
     content: str
 class messageOUT(BaseModel):
-    id: str
-    conversation_id: str
+    id: UUID
+    conversation_id: UUID
     role: MessageRole
     content: str
     model_config= {
