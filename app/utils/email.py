@@ -25,7 +25,7 @@ def send_welcome_email(email: str):
     })
 def send_verify_email(email: str):
     resend.Emails.send({
-        "from": "Your App <onboarding@resend.dev>",
+        "from": "Your App <noreply@abdulazeez-akande.com.ng>",
         "to": [email],
         "subject": "Welcome!",
         "html": """
