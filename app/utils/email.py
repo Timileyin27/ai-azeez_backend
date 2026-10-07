@@ -3,7 +3,7 @@ from app.config import settings
 resend.api_key= settings.resend_api_key
 def send_otp_email(email: str, otp: str):
     resend.Emails.send({
-        "from": "Your App <onboarding@resend.dev>",
+        "from": "Your App <noreply@abdulazeez-akande.com.ng>",
         "to": [email],
         "subject": "Your OTP Code",
         "html": f"""
