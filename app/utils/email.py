@@ -8,10 +8,9 @@ def send_otp_email(email: str, otp: str):
         "subject": "Your OTP Code",
         "html": f"""
             <h2>Your OTP Code</h2>
-            "{otp} is your MyApp verification code",
+            
         f"<p>Your verification code is <b>{otp}</b>.</p>"
         "<p>It expires in 10 minutes. If you didn't request it, ignore this email.</p>",
-        f"Your verification code is {otp}. It expires in 10 minutes. "
         "If you didn't request it, ignore this email.
         """
     })
