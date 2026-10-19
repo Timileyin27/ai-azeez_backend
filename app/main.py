@@ -12,11 +12,7 @@ app.add_middleware(
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
-    allow_origins=[
-        "https://ai-azeez.vercel.app",
-        "https://id-preview--f3e156f9-29b9-4a45-871a-e42c215b14d1.lovable.app",
-        "https://smart-convo-ui.lovable.app",
-    ],
+    
 
 )
 app.include_router(user.router)
