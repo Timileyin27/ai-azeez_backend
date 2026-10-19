@@ -6,9 +6,11 @@ import uuid
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect
 from sqlalchemy.sql import func
  
+import app.models.users
+import app.oauth2
 from app.ai.stream import stream_reply
-from app.database import SessionLocal                          # ADJUST: your session factory
-from app.models.chat import Conversation, Message, MessageRole  # ADJUST: your models path
+from app.database import SessionLocal                          # ADJUST if your session factory has another name
+from app.models.chat import Conversation, Message, MessageRole
 from app.ws.manager import manager
  
 logger = logging.getLogger(__name__)
@@ -25,13 +27,21 @@ MAX_MESSAGE_LENGTH = 4000
 def user_id_from_token(token: str) -> str:
     """Return the user id for a valid access token, or raise.
  
-    ADJUST: call the same function your HTTP `get_current_user` dependency uses
-    to decode and validate the JWT (signature, expiry, token type). Example:
- 
-        from app.oauth2 import verify_access_token
-        return str(verify_access_token(token).id)
+    Uses the same verify_access_token() as the HTTP get_current_user dependency,
+    so signature, expiry and the `sub` claim are checked identically.
     """
-    raise NotImplementedError("Hook this up to your existing JWT verification")
+    token_data = app.oauth2.verify_access_token(token, ValueError("invalid token"))
+    return str(token_data.id)
+ 
+ 
+def _user_exists(user_id: str) -> bool:
+    with SessionLocal() as db:
+        return (
+            db.query(app.models.users.User.id)
+            .filter(app.models.users.User.id == uuid.UUID(user_id))
+            .first()
+            is not None
+        )
  
  
 async def authenticate(ws: WebSocket) -> str | None:
@@ -43,7 +53,11 @@ async def authenticate(ws: WebSocket) -> str | None:
         data = json.loads(raw)
         if not isinstance(data, dict) or data.get("type") != "auth":
             return None
-        return user_id_from_token(data["token"])
+        user_id = user_id_from_token(data["token"])
+        # Same as get_current_user: a valid token for a deleted user is rejected.
+        if not await asyncio.to_thread(_user_exists, user_id):
+            return None
+        return user_id
     except Exception:
         return None
  
@@ -202,4 +216,3 @@ async def websocket_endpoint(ws: WebSocket):
         manager.disconnect(user_id, ws)
         for task in in_flight:
             task.cancel()
- 
