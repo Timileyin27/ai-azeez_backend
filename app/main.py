@@ -7,7 +7,7 @@ app= FastAPI()
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
-        "http://localhost:8081",
+        "http://localhost:8080",
         "https://ai-azeez.vercel.app",
     ],
     allow_origin_regex=r"https://(id-preview--|preview--)?f3e156f9-29b9-4a45-871a-e42c215b14d1\.(lovable\.app|lovableproject\.com)",
