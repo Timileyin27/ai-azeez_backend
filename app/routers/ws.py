@@ -8,7 +8,7 @@ from sqlalchemy.sql import func
  
 import app.models.users
 import app.oauth2
-from app.ai.stream import stream_reply
+from app.services.ai_service import stream_reply
 from app.database import SessionLocal                          # ADJUST if your session factory has another name
 from app.models.chat import Conversation, Message, MessageRole
 from app.ws.manager import manager
@@ -17,7 +17,7 @@ logger = logging.getLogger(__name__)
 router = APIRouter()
  
 AUTH_TIMEOUT_SECONDS = 10
-HISTORY_LIMIT = 20
+HISTORY_LIMIT = 50  # rows fetched; ai/context.py trims them to the token budget
 MAX_MESSAGE_LENGTH = 4000
  
  
@@ -216,3 +216,4 @@ async def websocket_endpoint(ws: WebSocket):
         manager.disconnect(user_id, ws)
         for task in in_flight:
             task.cancel()
+ 
