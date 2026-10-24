@@ -12,7 +12,8 @@ class Settings(BaseSettings):
     database_url: str 
     resend_api_key: str
     gemini_api_key:str
-    gemini_model: str = "gemini-3.8-flash"
+    gemini_model: str = "gemini-3.5-flash"
+    gemini_fallback_model: str = "gemini-3.1-flash-lite"
     
     class Config:
         env_file = ".env"

@@ -14,12 +14,15 @@ from app.config import settings
 logger = logging.getLogger(__name__)
  
 # Set GEMINI_MODEL in your env to change it without touching code.
-MODEL = getattr(settings, "gemini_model", None) or "gemini-2.5-flash"
+MODEL = getattr(settings, "gemini_model", None) or "gemini-3.5-flash"
+# Used when the primary model is overloaded or too slow. Pick one that passes
+# your own timing test (see the test script), not just one that appears in models.list().
+FALLBACK_MODEL = getattr(settings, "gemini_fallback_model", None) or "gemini-3.1-flash-lite"
  
 FIRST_CHUNK_TIMEOUT = 20.0  # seconds to wait for the first token
 IDLE_TIMEOUT = 20.0         # max silence between tokens
 TOTAL_TIMEOUT = 90.0        # hard cap for one reply
-MAX_ATTEMPTS = 3
+MAX_ATTEMPTS = 2  # attempt 1: primary model, attempt 2: fallback model
 RETRYABLE_CODES = {429, 500, 502, 503, 504}
  
  
@@ -69,10 +72,11 @@ async def stream_chat(history: list[dict], system_prompt: str) -> AsyncIterator[
  
     for attempt in range(1, MAX_ATTEMPTS + 1):
         started = False  # once a token has been sent we can't retry cleanly
+        model = MODEL if attempt == 1 else FALLBACK_MODEL
         deadline = loop.time() + TOTAL_TIMEOUT
         try:
             stream = await client.aio.models.generate_content_stream(
-                model=MODEL, contents=contents, config=config
+                model=model, contents=contents, config=config
             )
             iterator = stream.__aiter__()
             wait = FIRST_CHUNK_TIMEOUT
@@ -94,13 +98,13 @@ async def stream_chat(history: list[dict], system_prompt: str) -> AsyncIterator[
  
         except asyncio.TimeoutError as e:
             last_error = e
-            logger.warning("Gemini timeout (attempt %s/%s)", attempt, MAX_ATTEMPTS)
+            logger.warning("Gemini timeout on %s (attempt %s/%s)", model, attempt, MAX_ATTEMPTS)
             if started:
                 raise AIError("reply timed out mid-stream") from e
         except errors.APIError as e:
             last_error = e
             code = getattr(e, "code", None)
-            logger.warning("Gemini API error %s (attempt %s/%s)", code, attempt, MAX_ATTEMPTS)
+            logger.warning("Gemini API error %s on %s (attempt %s/%s)", code, model, attempt, MAX_ATTEMPTS)
             if started or code not in RETRYABLE_CODES:
                 raise AIError(f"Gemini error {code}") from e
         except AIError:
